@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ҚМЖ Генераторы (Word + 10 балл + ЕБҚ)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2docx CDN for DOCX Export -->
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.min.js"></script>
+    <!-- FileSaver CDN for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 12pt; }
+            .print-area { width: 100% !important; margin: 0 !important; shadow: none !important; border: none !important; }
+        }
+        table, th, td { border: 1px solid #cbd5e1; border-collapse: collapse; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white py-4 shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-file-pen text-2xl text-yellow-300"></i>
+                <div>
+                    <h1 class="text-xl font-bold">ҚМЖ Генераторы</h1>
+                    <p class="text-xs text-indigo-200">Әмбебап сабақ жоспары (1 дескриптор = 1 балл | Жалпы: 10 балл + ЕБҚ бөлек)</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Form Section -->
+        <section class="lg:col-span-4 bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4 no-print h-fit">
+            <h2 class="text-lg font-bold text-slate-700 border-b pb-2 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-indigo-600"></i> Сабақ параметрлері
+            </h2>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Пән атауы</label>
+                <input type="text" id="subject" placeholder="Мысалы: Биология, Химия, Физика..." class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Сынып</label>
+                    <select id="grade" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="" selected disabled>Таңдаңыз</option>
+                        <option value="1">1-сынып</option>
+                        <option value="2">2-сынып</option>
+                        <option value="3">3-сынып</option>
+                        <option value="4">4-сынып</option>
+                        <option value="5">5-сынып</option>
+                        <option value="6">6-сынып</option>
+                        <option value="7">7-сынып</option>
+                        <option value="8">8-сынып</option>
+                        <option value="9">9-сынып</option>
+                        <option value="10">10-сынып</option>
+                        <option value="11">11-сынып</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Бөлім атауы</label>
+                    <input type="text" id="unit" placeholder="Мысалы: Молекулалық биология" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Сабақтың тақырыбы</label>
+                <input type="text" id="topic" placeholder="Мысалы: Нәруыздың құрылымы мен қызметі" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Оқу мақсаты (ОМ)</label>
+                <textarea id="objective" rows="2" placeholder="Мысалы: 10.5.1.2 нәруыздардың біріншілік, екіншілік, үшіншілік және төртіншілік құрылымдарын сипаттау" class="w-full text-sm p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+            </div>
+
+            
+
+            <button onclick="generateKMZH()" id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow transition flex justify-center items-center gap-2">
+                <i class="fa-solid fa-gears"></i> ҚМЖ Генерациялау
+            </button>
+            <button type="button" onclick="resetForm()" class="w-full mt-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 border rounded-lg py-2 flex justify-center items-center gap-2"><i class="fa-solid fa-eraser"></i> Форманы тазалау</button>
+        </section>
+
+        <!-- Preview Section -->
+        <section class="lg:col-span-8 space-y-4">
+            
+            <!-- Export Buttons -->
+            <div class="flex flex-wrap justify-between items-center bg-white p-3 rounded-xl border border-slate-200 no-print gap-2">
+                <span class="text-sm font-semibold text-slate-600">Кестедегі ұяшықты басып өңдеуге болады. Сақтау / Экспорттау:</span>
+                <div class="flex gap-2">
+                    <button onclick="exportToWord()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-file-word text-sm"></i> Word-қа жүктеу (.docx)
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-print text-sm"></i> PDF / Басып шығару
+                    </button>
+                </div>
+            </div>
+
+            <!-- KMZH Document Container -->
+            <div id="kmzhContainer" class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-slate-200 print-area space-y-6">
+                <div class="text-center border-b pb-4">
+                    <span class="text-xs uppercase tracking-widest text-indigo-600 font-bold">ҚЫСҚА МЕРЗІМДІ САБАҚ ЖОСПАРЫ (ҚМЖ)</span>
+                    <h2 id="outTopic" class="text-xl font-bold text-slate-800 mt-1">Сабақ тақырыбы көрсетілмеген</h2>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Пән: <span id="outSubject" class="font-medium text-slate-700">-</span> | 
+                        Сынып: <span id="outGrade" class="font-medium text-slate-700">-</span> | 
+                        Бөлім: <span id="outUnit" class="font-medium text-slate-700">-</span>
+                    </p>
+                </div>
+
+                <!-- Info Table -->
+                <table class="w-full text-xs text-left">
+                    <tbody>
+                        <tr>
+                            <td class="font-bold bg-slate-50 p-2 w-1/4">Оқу мақсаты:</td>
+                            <td id="outObjective" class="p-2" colspan="3">-</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50 p-2">Сабақтың мақсаты:</td>
+                            <td id="outLessonGoal" class="p-2" colspan="3">-</td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold bg-slate-50 p-2">Құндылықтар:</td>
+                            <td id="outValues" class="p-2" colspan="3">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Main Schedule Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead><tr class="bg-slate-100 text-xs">
+ <th class="p-2 border" style="width:8%">Кезең / Уақыт</th><th class="p-2 border" style="width:15%">Мұғалім әрекеті</th><th class="p-2 border" style="width:30%">Оқушы әрекеті &amp; Тапсырмалар</th><th class="p-2 border" style="width:17%">Дескрипторлар (1 дескриптор = 1 балл)</th><th class="p-2 border" style="width:22%">ЕБҚ оқушыларына қолдау</th><th class="p-2 border" style="width:8%">Ресурстар</th></tr></thead>
+                        <tbody id="kmzhTableBody">
+                            <tr>
+                                <td colspan="6" class="p-6 text-center text-slate-400 italic">
+                                    Сол жақтағы форманы толтырып, «ҚМЖ Генерациялау» батырмасын басыңыз.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl p-5 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <h3 class="font-bold text-lg mb-1">ҚМЖ жасау: 3 қадам</h3>
+    <p class="text-sm text-slate-600 mb-3">1) Промптты көшіріңіз. 2) Тегін ЖИ-чатқа қойып, жауабын алыңыз:
+      <a class="text-indigo-600 underline" href="https://gemini.google.com" target="_blank">Gemini</a>,
+      <a class="text-indigo-600 underline" href="https://chatgpt.com" target="_blank">ChatGPT</a>,
+      <a class="text-indigo-600 underline" href="https://claude.ai" target="_blank">Claude</a>.
+      3) Жауапты төмендегі өріске қойыңыз.</p>
+    <textarea id="aiPrompt" readonly rows="5" class="w-full text-xs p-2 border rounded-lg mb-2 bg-slate-50"></textarea>
+    <button id="copyBtn" onclick="copyPrompt()" class="mb-3 bg-indigo-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">Промптты көшіру</button>
+    <textarea id="aiAnswer" rows="6" placeholder="ЖИ жауабын осында қойыңыз..." class="w-full text-xs p-2 border rounded-lg mb-3"></textarea>
+    <div class="flex justify-end gap-2">
+      <button onclick="closeAi()" class="text-sm px-4 py-2 rounded-lg border">Жабу</button>
+      <button onclick="buildFromAnswer()" class="text-sm font-semibold px-4 py-2 rounded-lg bg-emerald-600 text-white">Жоспарды құру</button>
+    </div>
+  </div>
+</div>
+
+<script>
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const nl = s => esc(s).replace(/\n/g, '<br>');
+        const EMPTY_ROW = '<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Сол жақтағы форманы толтырып, «ҚМЖ Генерациялау» батырмасын басыңыз.</td></tr>';
+
+        const METHODS = `Жүгірмелі сөйлемдер – қабырғадағы сөйлемдерді оқып, топқа жеткізу; Үштіктер – 3 оқушы: айтушы, сұрақ қоюшы, бағалаушы; Домино – сұрақ пен жауап қималарын сәйкестендіру; Лото – қоржыннан нөмір/сұрақ алу; Бір картина – парақты айналдырып ой жазу; 3х3 – 9 торлы кестеден термин таңдап түсіндіру; Мұғалімге сұрақ – оқушы сұрақ құрастырады; Тиын – тиын лақтырып сұрақ қою; Құпиясы бар қорап – қорапшадан сұрақ алу; Блиц-сұрау – терминді айтпай түсіндіру; Бинго – 9 термин, сұрақ бойынша сызу; Карталар – сұрақ-жауап карталарын алмасу; Қарама-қарсы сұрақтар – екі топ бір-біріне сұрақ қояды; Алфавит – әріптен басталатын термин айту; Иә-жоқ – тұжырымға қарай бұрылу; 6 қалпақ – 6 рөлде талқылау; Бір минуттық эссе; Қағып ал! – анықтамаға сай термин карточкасын қағып алу; Модерация – идеяларды стикерге жазу; Стоп-кадр – видеоны тоқтатып сұрақ қою; Сөйлем қос – мәтінді кезекпен жалғастыру; Бүктелген қағаз – сұрақ жазып алмасу; Эксперт бұрышы – эксперт оқушы көмектеседі; Керемет қабырға – сұрақтарды қабырғаға жазу; Кір жаю – түсінгенін жіпке ілу; Төрт бұрыш – A,B,C,D бұрышын таңдау; Қос шеңбер – ішкі/сыртқы шеңбер жұптасу; Сигнал карталары – карта көтеріп жауап беру; RAFT – рөл, аудитория, формат, тақырып; Үш минуттық пауза – үнсіз ойланып жазу; Ойлан-Жұптас-Бөліс – жеке, жұппен, топпен`;
+
+        function resetForm() {
+            ['subject','unit','topic','objective'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('grade').value = '';
+            ['outSubject','outGrade','outUnit','outObjective','outLessonGoal','outValues'].forEach(id => document.getElementById(id).innerText = '-');
+            document.getElementById('outTopic').innerText = 'Сабақ тақырыбы көрсетілмеген';
+            document.getElementById('kmzhTableBody').innerHTML = EMPTY_ROW;
+        }
+
+        function buildPrompt(p) {
+            const st = (n, x = '') => `{"stage":"${n}","teacher":"","student":"","descriptors":[],"ebk":{"support":"","task":"","descriptors":[]},"resources":""${x}}`;
+            return `Ты методист-эксперт по обновлённому содержанию образования Казахстана. Составь краткосрочный план урока (ҚМЖ) НА КАЗАХСКОМ ЯЗЫКЕ.
+Предмет: ${p.subject}. Класс: ${p.grade}. Раздел: ${p.unit}. Тема: ${p.topic}. Цель обучения: ${p.objective}.
+
+ТРЕБОВАНИЯ
+1. lessonGoal: цель урока, логично вытекающая из цели обучения (1–2 предложения).
+2. values: 2–3 ценности (Мәңгілік Ел / стандарт РК) и конкретно: в каком задании и как они формируются.
+3. Урок 45 мин: басы 0–7, ортасы 7–32 (25 мин), соңы 32–45.
+4. Задания пиши ПОЛНОСТЬЮ, с реальным содержанием по теме (конкретные утверждения, пары для сопоставления, предложения с пропусками, данные/таблица/описание графика или рисунка, вопросы), чтобы учитель мог сразу раздать. Форматы разные: Иә/Жоқ, сәйкестендіру, бос орынды толтыру, деректерді/кестені/суретті интерпретациялау, тест (A–D), ашық сұрақ. Уровень заданий соответствует глаголу цели обучения.
+5. Методы бери ТОЛЬКО из списка ниже; пиши «Әдіс: <название>» и кратко шаги проведения. Басы: короткий метод-вход. Ортасы: 1 метод + 2 задания (если тема сложная: 2 метода с заданиями). Соңы: закрепляющее задание + рефлексия (поле reflection: вопросы или приём).
+6. Дескрипторы для всех учеников: ровно 10 в сумме, каждый 1 балл: басы 2, ортасы 6, соңы 2. Форма «Білім алушы …», проверяемое действие, привязанное к заданию.
+7. ЕБҚ (особые образовательные потребности): для каждого этапа ebk.support (виды поддержки), ebk.task (упрощённое задание с реальным содержанием), ebk.descriptors (1–2 упрощённых дескриптора, по 1 баллу).
+8. Критерии оценивания не нужны. Служебных пометок про подсчёт баллов не пиши.
+СПИСОК МЕТОДОВ: ${METHODS}
+
+Верни ТОЛЬКО валидный JSON без markdown; переносы строк внутри строк только как \\n:
+{"lessonGoal":"","values":"","stages":[${st('Сабақтың басы (0–7 мин)')},${st('Сабақтың ортасы (7–32 мин)')},${st('Сабақтың соңы (32–45 мин)', ',"reflection":""')}]}`;
+        }
+
+        function render(d) {
+            document.getElementById('outLessonGoal').innerText = d.lessonGoal || '-';
+            document.getElementById('outValues').innerText = d.values || '-';
+            const tb = document.getElementById('kmzhTableBody');
+            tb.innerHTML = '';
+            let n = 0;
+            d.stages.forEach(s => {
+                const e = s.ebk || {};
+                const ds = (s.descriptors || []).map(x => `${++n}. ${x?.text ?? x} — 1 балл`).join('\n');
+                const eb = `Қолдау түрлері: ${e.support || ''}\n\nЖеңілдетілген тапсырма: ${e.task || ''}\n\nДескрипторлар:\n` + (e.descriptors || []).map(x => `• ${x?.text ?? x} — 1 балл`).join('\n');
+                const stu = (s.student || '') + (s.reflection ? `\n\nРефлексия: ${s.reflection}` : '');
+                const c = (t, x = '') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t)}</td>`;
+                const tr = document.createElement('tr');
+                tr.className = 'border-b';
+                tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(s.stage)}</td>` + c(s.teacher) + c(stu) + c(ds, 'bg-amber-50/30') + c(eb, 'bg-emerald-50/30') + c(s.resources);
+                tb.appendChild(tr);
+            });
+            const tot = document.createElement('tr');
+            tot.innerHTML = `<td colspan="6" class="p-2 text-right font-bold">Барлығы: ${n} балл</td>`;
+            tb.appendChild(tot);
+            if (n !== 10) alert(`Дескрипторлар саны ${n} болып шықты (10 болуы керек). Кестеде ұяшықты өзіңіз түзетіңіз.`);
+        }
+
+        function openAi() { document.getElementById('aiModal').classList.remove('hidden'); }
+        function closeAi() { document.getElementById('aiModal').classList.add('hidden'); }
+        let curP = null;
+
+        function generateKMZH() {
+            const v = id => document.getElementById(id).value.trim();
+            const p = { subject: v('subject'), grade: v('grade'), unit: v('unit'), topic: v('topic'), objective: v('objective') };
+            if (Object.values(p).some(x => !x)) {
+                alert('Барлық өрісті толтырыңыз: пән, сынып, бөлім, тақырып, оқу мақсаты.');
+                return;
+            }
+            curP = p;
+            document.getElementById('aiPrompt').value = buildPrompt(p);
+            document.getElementById('aiAnswer').value = '';
+            openAi();
+        }
+
+        async function copyPrompt() {
+            const t = document.getElementById('aiPrompt');
+            try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand('copy'); }
+            const b = document.getElementById('copyBtn');
+            b.innerText = 'Көшірілді ✓';
+            setTimeout(() => b.innerText = 'Промптты көшіру', 2000);
+        }
+
+        function parseLoose(t) {
+            const s = t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1);
+            try { return JSON.parse(s); } catch (e) {}
+            let o = '', inS = false;
+            for (let i = 0; i < s.length; i++) {
+                const c = s[i];
+                if (!inS) { o += c; if (c === '"') inS = true; continue; }
+                if (c === '\\') { o += c + (s[++i] || ''); continue; }
+                if (c === '"') {
+                    const nx = s.slice(i + 1).match(/^\s*(.)/);
+                    if (!nx || ',}]:'.includes(nx[1])) { o += c; inS = false; } else o += '\\"';
+                    continue;
+                }
+                if (c === '\n') o += '\\n'; else if (c === '\r') {} else if (c === '\t') o += ' '; else o += c;
+            }
+            return JSON.parse(o.replace(/,\s*([}\]])/g, '$1'));
+        }
+
+        function buildFromAnswer() {
+            let d;
+            try {
+                d = parseLoose(document.getElementById('aiAnswer').value);
+                if (!d || !Array.isArray(d.stages)) throw new Error('"stages" бөлімі табылмады');
+            } catch (e) {
+                alert('Жауап оқылмады: ' + e.message + '\n\nЖИ-ге «Тек JSON қайтар, басқа мәтін жазба» деп қайта сұраңыз, жауапты толық қойыңыз.');
+                return;
+            }
+            document.getElementById('outTopic').innerText = curP.topic;
+            document.getElementById('outSubject').innerText = curP.subject;
+            document.getElementById('outGrade').innerText = curP.grade + '-сынып';
+            document.getElementById('outUnit').innerText = curP.unit;
+            document.getElementById('outObjective').innerText = curP.objective;
+            try { render(d); closeAi(); }
+            catch (e) { alert('Кестені құруда қате: ' + e.message); }
+        }
+
+        // Export Document to DOCX
+        function exportToWord() {
+            const topic = document.getElementById('outTopic').innerText || 'КМЖ';
+            const content = document.getElementById('kmzhContainer').innerHTML;
+
+            const htmlDocument = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>${topic}</title>
+                    <style>
+                        body { font-family: 'Calibri', 'Arial', sans-serif; font-size: 11pt; }
+                        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+                        th, td { border: 1px solid #000000; padding: 6px; text-align: left; vertical-align: top; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                        h2 { text-align: center; color: #1a365d; }
+                    </style>
+                </head>
+                <body>
+                    ${content}
+                </body>
+                </html>
+            `;
+
+            const converted = htmlDocx.asBlob(htmlDocument, {orientation: "landscape"});
+            saveAs(converted, `${topic}_ҚМЖ.docx`);
+        }
+    </script>
+</body>
+</html>
