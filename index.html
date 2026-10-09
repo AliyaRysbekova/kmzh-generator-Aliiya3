@@ -209,27 +209,96 @@
 {"lessonGoal":"","values":"","stages":[${st('Сабақтың басы (0–7 мин)')},${st('Сабақтың ортасы (7–32 мин)')},${st('Сабақтың соңы (32–45 мин)', ',"reflection":""')}]}`;
         }
 
+        function normalizeArray(v) {
+            if (Array.isArray(v)) return v;
+            if (v == null || v === '') return [];
+            return [v];
+        }
+
+        function textOf(v) {
+            if (v == null) return '';
+            if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+            if (typeof v === 'object') return String(v.text ?? v.value ?? v.description ?? v.content ?? '');
+            return '';
+        }
+
+        function getField(obj, names) {
+            for (const name of names) {
+                if (obj && obj[name] != null && obj[name] !== '') return obj[name];
+            }
+            return '';
+        }
+
         function render(d) {
-            document.getElementById('outLessonGoal').innerText = d.lessonGoal || '-';
-            document.getElementById('outValues').innerText = d.values || '-';
+            document.getElementById('outLessonGoal').innerText =
+                textOf(getField(d, ['lessonGoal','lesson_goal','goal','сабақМақсаты'])) || '-';
+            document.getElementById('outValues').innerText =
+                textOf(getField(d, ['values','value','құндылықтар'])) || '-';
+
             const tb = document.getElementById('kmzhTableBody');
             tb.innerHTML = '';
             let n = 0;
-            d.stages.forEach(s => {
-                const e = s.ebk || {};
-                const ds = (s.descriptors || []).map(x => `${++n}. ${x?.text ?? x} — 1 балл`).join('\n');
-                const eb = `Қолдау түрлері: ${e.support || ''}\n\nЖеңілдетілген тапсырма: ${e.task || ''}\n\nДескрипторлар:\n` + (e.descriptors || []).map(x => `• ${x?.text ?? x} — 1 балл`).join('\n');
-                const stu = (s.student || '') + (s.reflection ? `\n\nРефлексия: ${s.reflection}` : '');
-                const c = (t, x = '') => `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t)}</td>`;
+
+            const stages = normalizeArray(d.stages || d.stage || d.lessonStages);
+
+            stages.forEach((s, index) => {
+                s = s || {};
+                const e = s.ebk || s.EBK || s.ebq || {};
+
+                const teacher = textOf(getField(s, ['teacher','teacherAction','teacher_activity','мұғалім']));
+                const student = textOf(getField(s, ['student','studentAction','student_activity','оқушы','оқушыӘрекеті']));
+                const resources = textOf(getField(s, ['resources','resource','ресурстар']));
+
+                const descriptors = normalizeArray(
+                    getField(s, ['descriptors','descriptor','дескрипторлар'])
+                );
+
+                const ds = descriptors.map(x => {
+                    const txt = textOf(x);
+                    if (!txt) return '';
+                    n++;
+                    return `${n}. ${txt} — 1 балл`;
+                }).filter(Boolean).join('\n');
+
+                const support = textOf(getField(e, ['support','қолдау','supportType']));
+                const task = textOf(getField(e, ['task','ebkTask','жеңілдетілгенТапсырма']));
+                const ebDescriptors = normalizeArray(
+                    getField(e, ['descriptors','descriptor','дескрипторлар'])
+                );
+
+                const eb = `Қолдау түрлері: ${support || '-'}\n\nЖеңілдетілген тапсырма: ${task || '-'}\n\nДескрипторлар:\n` +
+                    (ebDescriptors.length
+                        ? ebDescriptors.map(x => `• ${textOf(x)} — 1 балл`).join('\n')
+                        : '-');
+
+                const reflection = textOf(getField(s, ['reflection','рефлексия']));
+                const stu = student + (reflection ? `\n\nРефлексия: ${reflection}` : '');
+
+                const stageName = textOf(getField(s, ['stage','name','кезең'])) || `Кезең ${index + 1}`;
+
+                const c = (t, x = '') =>
+                    `<td class="p-2 align-top border-r ${x}" contenteditable="true">${nl(t || '')}</td>`;
+
                 const tr = document.createElement('tr');
                 tr.className = 'border-b';
-                tr.innerHTML = `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(s.stage)}</td>` + c(s.teacher) + c(stu) + c(ds, 'bg-amber-50/30') + c(eb, 'bg-emerald-50/30') + c(s.resources);
+                tr.innerHTML =
+                    `<td class="p-2 align-top font-bold text-indigo-900 border-r bg-slate-50">${esc(stageName)}</td>` +
+                    c(teacher) +
+                    c(stu) +
+                    c(ds || '-', 'bg-amber-50/30') +
+                    c(eb, 'bg-emerald-50/30') +
+                    c(resources || '-');
+
                 tb.appendChild(tr);
             });
+
             const tot = document.createElement('tr');
             tot.innerHTML = `<td colspan="6" class="p-2 text-right font-bold">Барлығы: ${n} балл</td>`;
             tb.appendChild(tot);
-            if (n !== 10) alert(`Дескрипторлар саны ${n} болып шықты (10 болуы керек). Кестеде ұяшықты өзіңіз түзетіңіз.`);
+
+            if (n !== 10) {
+                alert(`Дескрипторлар саны ${n} болып шықты. ҚМЖ талаптары бойынша жалпы саны 10 балл болуы керек.`);
+            }
         }
 
         function openAi() { document.getElementById('aiModal').classList.remove('hidden'); }
@@ -258,9 +327,18 @@
         }
 
         function parseLoose(t) {
-            const s = t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1);
+            t = String(t ?? '').replace(/^\uFEFF/, '').trim();
+            t = t.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+            const first = t.indexOf('{');
+            const last = t.lastIndexOf('}');
+            if (first < 0 || last < first) throw new Error('JSON табылмады');
+
+            const s = t.slice(first, last + 1);
             try { return JSON.parse(s); } catch (e) {}
+
             let o = '', inS = false;
+
             for (let i = 0; i < s.length; i++) {
                 const c = s[i];
                 if (!inS) { o += c; if (c === '"') inS = true; continue; }
